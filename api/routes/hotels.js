@@ -6,23 +6,18 @@ import {
   getHotels,
   updateHotel,
 } from '../controllers/hotel.js';
+import { verifyAdmin } from '../utils/verifyToken.js';
 
-Router;
 const router = Router();
 
-// TODO: Create
-router.post('/', createHotel);
+router.post('/', verifyAdmin, createHotel);
 
-// TODO: Update
-router.put('/:id', updateHotel);
+router.put('/:id', verifyAdmin, updateHotel);
 
-// TODO: Delete
-router.delete('/:id', deleteHotel);
+router.delete('/:id', verifyAdmin, deleteHotel);
 
-// TODO: Get
 router.get('/:id', getHotel);
 
-// TODO: Get All
 router.get('/', getHotels);
 
 export default router;
