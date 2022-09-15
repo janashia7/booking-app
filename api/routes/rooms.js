@@ -12,9 +12,9 @@ const router = Router();
 
 router.post('/:hotelId', verifyAdmin, createRoom);
 
-router.put('/:id/:hotelId', verifyAdmin, updateRoom);
+router.put('/:id', verifyAdmin, updateRoom);
 
-router.delete('/:id', verifyAdmin, deleteRoom);
+router.delete('/:id/:hotelId', verifyAdmin, deleteRoom);
 
 router.get('/:id', getRoom);
 
