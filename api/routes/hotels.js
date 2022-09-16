@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import {
+  countByCity,
+  countByType,
   createHotel,
   deleteHotel,
   getHotel,
@@ -12,12 +14,16 @@ const router = Router();
 
 router.post('/', verifyAdmin, createHotel);
 
-router.put('/:id', verifyAdmin, updateHotel);
+router.put('/find/:id', verifyAdmin, updateHotel);
 
-router.delete('/:id', verifyAdmin, deleteHotel);
+router.delete('/find/:id', verifyAdmin, deleteHotel);
 
-router.get('/:id', getHotel);
+router.get('/find/:id', getHotel);
 
 router.get('/', getHotels);
+
+router.get('/countByCity', countByCity);
+
+router.get('/countByType', countByType);
 
 export default router;
