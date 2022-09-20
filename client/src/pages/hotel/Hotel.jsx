@@ -10,18 +10,41 @@ import {
   faCircleXmark,
   faLocationDot,
 } from '@fortawesome/free-solid-svg-icons';
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import useFetch from '../../hooks/useFetch';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { SearchContext } from '../../context/SearchContext';
+import { AuthContext } from '../../context/AuthContext';
+import Reserve from '../../components/reserve/Reserve';
 
 const Hotel = () => {
   const location = useLocation();
   const id = location.pathname.split('/')[2];
   const [slideNumber, setSlideNumber] = useState(0);
   const [open, setOpen] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
+
+  const navigate = useNavigate();
 
   const { data, loading, error } = useFetch(`/hotels/find/${id}`);
 
+  const { dates, options } = useContext(SearchContext);
+
+  const { user } = useContext(AuthContext);
+
+  const MS_PER_DAY = 1000 * 60 * 60 * 24;
+  const dayDifference = (date1, date2) => {
+    console.log(date2.getTime(), 'this');
+    const timeDiff = Math.abs(date2?.getTime() - date1?.getTime());
+    const diffDays = Math.ceil(timeDiff / MS_PER_DAY);
+
+    return diffDays;
+  };
+  const daysDiff = dayDifference(
+    new Date(dates[0]?.endDate),
+    new Date(dates[0]?.startDate)
+  );
+  console.log(daysDiff, 'diff');
   const handleOpen = (i) => {
     setSlideNumber(i);
     setOpen(true);
@@ -37,6 +60,10 @@ const Hotel = () => {
     }
 
     setSlideNumber(newSlideNumber);
+  };
+
+  const handleClick = () => {
+    user ? setOpenModal(true) : navigate('/login');
   };
 
   return (
@@ -105,15 +132,16 @@ const Hotel = () => {
                 <p className="hotelDesc">{data.desc}</p>
               </div>
               <div className="hotelDetailsPrice">
-                <h1>Perfect for a 9-night stay!</h1>
+                <h1>Perfect for a {daysDiff}-night stay!</h1>
                 <span>
                   Located in the real heart of Krakow, this property has an
                   excellent location score of 9.8!
                 </span>
                 <h2>
-                  <b>$945</b> (9 nights)
+                  <b>${daysDiff * data.cheapestPrice * options.room}</b> (
+                  {daysDiff} nights)
                 </h2>
-                <button>Reserve or Book Now!</button>
+                <button onClick={handleClick}>Reserve or Book Now!</button>
               </div>
             </div>
           </div>
@@ -121,6 +149,7 @@ const Hotel = () => {
           <Footer />
         </div>
       )}
+      {openModal && <Reserve setOpen={setOpenModal} hotelId={id}></Reserve>}
     </div>
   );
 };
