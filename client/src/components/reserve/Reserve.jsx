@@ -1,9 +1,11 @@
 import { faCircleXmark } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useContext, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useFetch from '../../hooks/useFetch';
 import { SearchContext } from '../../context/SearchContext';
 import './reserve.css';
+import axios from 'axios';
 
 const Reserve = ({ setOpen, hotelId }) => {
   const [selectedRooms, setSelectedRooms] = useState([]);
@@ -12,8 +14,28 @@ const Reserve = ({ setOpen, hotelId }) => {
   const { dates } = useContext(SearchContext);
 
   // TODO: get dates in range
-  const getDatesInRanges = (start, end) => {
-    const date = new Date(start).getDate();
+  const getDatesInRanges = (startDate, endDate) => {
+    console.log(startDate, endDate);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const date = new Date(start.getTime());
+
+    let list = [];
+
+    while (date <= end) {
+      list.push(new Date(date).getTime());
+      date.setDate(date.getDate() + 1);
+    }
+    return list;
+  };
+
+  const daysRange = getDatesInRanges(dates[0].startDate, dates[0].endDate);
+
+  const isAvailable = (roomNumber) => {
+    const exists = roomNumber.unavailableDates.some((date) =>
+      daysRange.includes(new Date(date).getTime())
+    );
+    return !exists;
   };
 
   const handleSelect = (e) => {
@@ -23,11 +45,27 @@ const Reserve = ({ setOpen, hotelId }) => {
     setSelectedRooms(
       checked
         ? [...selectedRooms, value]
-        : selectedRooms.filter((item) => item != value)
+        : selectedRooms.filter((item) => item !== value)
     );
   };
 
-  const handleClick = () => {};
+  const navigate = useNavigate();
+
+  const handleClick = async () => {
+    try {
+      await Promise.all(
+        selectedRooms.map((roomId) => {
+          const res = axios.put(`/rooms/availability/${roomId}`, {
+            dates: daysRange,
+          });
+
+          return res.data;
+        })
+      );
+      setOpen(false);
+      navigate('/');
+    } catch (err) {}
+  };
 
   console.log(selectedRooms);
   return (
@@ -41,7 +79,7 @@ const Reserve = ({ setOpen, hotelId }) => {
         <span>Select your rooms:</span>
         {data.map((item) => (
           <div className="rItem" key={item._id}>
-            <div className="rItemInfo">
+            <div className="rInfo">
               <div className="rTitle">{item.title}</div>
               <div className="rDesc">{item.desc}</div>
               <div className="rMax">
@@ -49,17 +87,19 @@ const Reserve = ({ setOpen, hotelId }) => {
               </div>
               <div className="rPrice">${item.price}</div>
             </div>
-
-            {item.roomNumbers.map((roomNumber, i) => (
-              <div className="room" key={roomNumber._id}>
-                <label>{roomNumber.number}</label>
-                <input
-                  type="checkbox"
-                  value={roomNumber._id}
-                  onChange={handleSelect}
-                ></input>
-              </div>
-            ))}
+            <div className="rSelectRooms">
+              {item.roomNumbers.map((roomNumber, i) => (
+                <div className="room" key={roomNumber._id}>
+                  <label>{roomNumber.number}</label>
+                  <input
+                    type="checkbox"
+                    value={roomNumber._id}
+                    onChange={handleSelect}
+                    disabled={!isAvailable(roomNumber)}
+                  ></input>
+                </div>
+              ))}
+            </div>
           </div>
         ))}
 
